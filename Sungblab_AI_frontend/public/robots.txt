@@ -1,0 +1,14 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Admin pages
+Disallow: /admin/
+Disallow: /admin/*
+
+# Auth pages
+Disallow: /auth/reset-password
+Disallow: /auth/find-password
+
+# Sitemap
+Sitemap: https://sungblab.com/sitemap.xml

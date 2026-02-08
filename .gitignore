@@ -1,0 +1,53 @@
+# Generic
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.bak
+
+# Frontend (Node.js/Vite)
+Sungblab_AI_frontend/node_modules/
+Sungblab_AI_frontend/dist/
+Sungblab_AI_frontend/dist-ssr/
+Sungblab_AI_frontend/*.local
+Sungblab_AI_frontend/.env
+Sungblab_AI_frontend/.env.development
+Sungblab_AI_frontend/.env.production
+Sungblab_AI_frontend/.vercel
+
+# Backend (Python/FastAPI)
+Sungblab_AI_backend/__pycache__/
+Sungblab_AI_backend/*.py[cod]
+Sungblab_AI_backend/*$py.class
+Sungblab_AI_backend/.env
+Sungblab_AI_backend/.venv/
+Sungblab_AI_backend/env/
+Sungblab_AI_backend/venv/
+Sungblab_AI_backend/ENV/
+Sungblab_AI_backend/build/
+Sungblab_AI_backend/develop-eggs/
+Sungblab_AI_backend/dist/
+Sungblab_AI_backend/downloads/
+Sungblab_AI_backend/eggs/
+Sungblab_AI_backend/.eggs/
+Sungblab_AI_backend/lib/
+Sungblab_AI_backend/lib64/
+Sungblab_AI_backend/parts/
+Sungblab_AI_backend/sdist/
+Sungblab_AI_backend/var/
+Sungblab_AI_backend/wheels/
+Sungblab_AI_backend/*.egg-info/
+Sungblab_AI_backend/.installed.cfg
+Sungblab_AI_backend/*.egg
+Sungblab_AI_backend/.pytest_cache/
+Sungblab_AI_backend/.mypy_cache/
+
+# Docker
+Sungblab_AI_backend/db_data/
+Sungblab_AI_backend/redis_data/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo

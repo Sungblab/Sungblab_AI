@@ -1,0 +1,125 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: "Pretendard";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch; /* iOS 스크롤 부드럽게 */
+  min-height: 100dvh;
+  width: 100%;
+  position: relative;
+}
+
+html {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+
+code {
+  font-family: source-code-pro;
+}
+
+/* 스크롤바 스타일링 */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 8px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background-color: #c1c1c1;
+  border-radius: 4px;
+  border: 2px solid #f1f1f1;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background-color: #a8a8a8;
+}
+
+/* 맞춤법 검사 밑줄 스타일 개선 */
+.spell-check-enabled {
+  /* 브라우저 기본 맞춤법 검사 활성화하되 스타일 개선 */
+}
+
+/* 맞춤법 오류 밑줄을 더 예쁘게 */
+.spell-check-enabled::-webkit-spelling-error {
+  text-decoration: underline;
+  text-decoration-color: #ef4444;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+.spell-check-enabled::-webkit-grammar-error {
+  text-decoration: underline;
+  text-decoration-color: #3b82f6;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+/* Firefox용 */
+.spell-check-enabled::-moz-spelling-error {
+  text-decoration: underline;
+  text-decoration-color: #ef4444;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 2px;
+}
+
+.spell-check-enabled::-moz-grammar-error {
+  text-decoration: underline;
+  text-decoration-color: #3b82f6;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 2px;
+}
+
+/* 다크 모드 스크롤바 */
+.dark .overflow-y-auto::-webkit-scrollbar-track {
+  background: #2d2d2d;
+}
+
+.dark .overflow-y-auto::-webkit-scrollbar-thumb {
+  background-color: #666;
+  border: 2px solid #2d2d2d;
+}
+
+.dark .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background-color: #777;
+}
+
+@layer base {
+  body {
+    @apply bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 font-semibold text-primary-700 bg-primary-100 rounded-lg hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:text-primary-100 dark:bg-primary-900 dark:hover:bg-primary-800 dark:focus:ring-offset-gray-900;
+  }
+
+  .input-primary {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:focus:ring-primary-500 dark:focus:border-primary-500;
+  }
+}
+
+/* 마진 클래스 제거 */
+@media (min-width: 768px) {
+  /* 다른 미디어 쿼리 스타일들... */
+}

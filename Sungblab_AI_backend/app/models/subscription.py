@@ -1,0 +1,166 @@
+from sqlalchemy import Column, String, Integer, DateTime, Boolean, ForeignKey, Enum as SQLEnum, JSON
+from sqlalchemy.orm import relationship
+from sqlalchemy.orm.attributes import flag_modified
+from app.db.base_class import Base
+from datetime import datetime, timedelta, timezone
+from app.core.utils import generate_uuid
+from app.core.models import ModelGroup, PLAN_LIMITS, MODEL_GROUP_MAPPING, ACTIVE_MODELS
+import enum
+
+class SubscriptionPlan(str, enum.Enum):
+    FREE = "FREE"
+    BASIC = "BASIC"
+    PREMIUM = "PREMIUM"
+
+class Subscription(Base):
+    __tablename__ = "subscriptions"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), unique=True)
+    plan = Column(SQLEnum(SubscriptionPlan), default=SubscriptionPlan.FREE)
+    status = Column(String, default="active")  # active, cancelled, expired
+    start_date = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    end_date = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc) + timedelta(days=30))
+    auto_renew = Column(Boolean, default=True)
+    renewal_date = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc) + timedelta(days=30))
+    
+    # 그룹별 사용량 추적
+    group_usage = Column(JSON, default={
+        "basic_chat": 0,
+        "normal_analysis": 0,
+        "advanced_analysis": 0
+    })
+    
+    # 그룹별 제한량 (플랜에 따라 다름)
+    group_limits = Column(JSON, default=PLAN_LIMITS["FREE"])
+
+    # Relationships
+    user = relationship("User", back_populates="subscription")
+
+    def update_limits_for_plan(self):
+        """현재 플랜에 맞는 제한량으로 업데이트하고 구독 기간을 초기화합니다."""
+        self.group_limits = PLAN_LIMITS[self.plan]
+        current_time = datetime.now(timezone.utc)
+        
+        # 구독 기간을 현재 시점부터 30일로 초기화
+        self.start_date = current_time
+        self.end_date = current_time + timedelta(days=30)
+        self.renewal_date = self.end_date
+        
+        # 상태 업데이트
+        self.status = "active"
+        
+        # 사용량 초기화
+        self.reset_usage()
+
+    def check_expiration(self):
+        """구독 만료 여부를 확인하고 상태를 업데이트합니다."""
+        current_time = datetime.now(timezone.utc)
+        if self.end_date and current_time > self.end_date:
+            if self.auto_renew:
+                self.renew_subscription()
+            else:
+                self.status = "expired"
+
+    def renew_subscription(self):
+        """구독을 갱신합니다."""
+        current_time = datetime.now(timezone.utc)
+        self.start_date = current_time
+        self.end_date = current_time + timedelta(days=30)
+        self.renewal_date = self.end_date
+        self.status = "active"
+        
+        # 유료 플랜인 경우 무료 플랜으로 변경
+        if self.plan != SubscriptionPlan.FREE:
+            self.plan = SubscriptionPlan.FREE
+            self.group_limits = PLAN_LIMITS["FREE"]
+        
+        self.reset_usage()
+
+    def get_model_group(self, model_name: str) -> str:
+        """모델 이름으로 해당 그룹을 반환합니다."""
+        return MODEL_GROUP_MAPPING.get(model_name, "")
+
+    def can_use_model(self, model_name: str) -> bool:
+        """특정 모델 사용 가능 여부를 확인합니다."""
+        group = self.get_model_group(model_name)
+        if not group:
+            return False
+        return self.group_usage[group] < self.group_limits[group]
+
+    def can_increment_usage(self, model_name: str) -> bool:
+        """특정 모델의 사용량을 증가시킬 수 있는지 미리 확인합니다. (락 없이 빠른 체크)"""
+        return self.can_use_model(model_name)
+
+    def increment_usage(self, model_name: str) -> bool:
+        """모델 사용량을 증가시킵니다."""
+        group = self.get_model_group(model_name)
+        
+        if not group:
+            return False
+        
+        if not self.can_use_model(model_name):
+            return False
+        
+        # 기본 딕셔너리 확인 및 초기화
+        if not isinstance(self.group_usage, dict):
+            self.group_usage = {
+                "basic_chat": 0,
+                "normal_analysis": 0,
+                "advanced_analysis": 0
+            }
+        
+        # 안전하게 증가
+        current_usage = self.group_usage.get(group, 0)
+        if current_usage >= self.group_limits[group]:
+            return False
+        
+        # JSON 필드 변경 강제 감지를 위해 새 딕셔너리 생성
+        new_usage = dict(self.group_usage)
+        new_usage[group] = current_usage + 1
+        self.group_usage = new_usage
+        
+        # SQLAlchemy에 JSON 필드 변경 알림
+        flag_modified(self, 'group_usage')
+        
+        return True
+
+    def get_remaining_usage(self, model_name: str) -> int:
+        """특정 모델의 남은 사용 가능 횟수를 반환합니다."""
+        group = self.get_model_group(model_name)
+        if not group:
+            return 0
+        return max(0, self.group_limits[group] - self.group_usage[group])
+
+    def reset_usage(self):
+        """사용량을 초기화합니다."""
+        self.group_usage = {
+            "basic_chat": 0,
+            "normal_analysis": 0,
+            "advanced_analysis": 0
+        }
+
+    def to_dict(self):
+        base_dict = {
+            "id": self.id,
+            "user_id": self.user_id,
+            "plan": self.plan,
+            "status": self.status,
+            "start_date": self.start_date.isoformat() if self.start_date else None,
+            "end_date": self.end_date.isoformat() if self.end_date else None,
+            "auto_renew": self.auto_renew,
+            "renewal_date": self.renewal_date.isoformat() if self.renewal_date else None,
+            "user_email": self.user.email if self.user else "[삭제된 사용자]",
+            "user_name": self.user.full_name if self.user else "[삭제된 사용자]",
+            "group_usage": self.group_usage,
+            "group_limits": self.group_limits,
+            "days_remaining": (self.end_date - datetime.now(timezone.utc)).days if self.end_date else 0
+        }
+        
+        # 각 그룹별 남은 사용량 추가
+        base_dict["remaining_usage"] = {
+            group: self.group_limits[group] - self.group_usage[group]
+            for group in self.group_usage.keys()
+        }
+        
+        return base_dict 
